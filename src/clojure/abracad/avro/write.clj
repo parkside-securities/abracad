@@ -5,7 +5,8 @@
             [abracad.avro.edn :as edn]
             [abracad.avro.util :refer [case-expr case-enum mangle unmangle
                                        field-keyword]]
-            [clojure.set :as set])
+            [clojure.set :as set]
+            [clojure.data :as data])
   (:import [java.util Collection Map List]
            [java.nio ByteBuffer]
            [clojure.lang Named Sequential IRecord Indexed]
@@ -73,9 +74,13 @@ record serialization."
     (.writeFixed encoder bytes)))
 
 (defn schema-error!
-  [^Schema schema datum]
-  (throw (ex-info "Cannot write datum as schema"
-                  {:datum datum, :schema (.getFullName schema)})))
+  ([^Schema schema datum]
+   (schema-error! schema datum {}))
+  ([^Schema schema datum more]
+   (throw (ex-info "Cannot write datum as schema"
+                   (merge
+                    {:datum datum, :schema (.getFullName schema)}
+                    more)))))
 
 (defn wr-named
   [^ClojureDatumWriter writer ^Schema schema datum ^Encoder out]
@@ -88,12 +93,25 @@ record serialization."
   [^ClojureDatumWriter writer ^Schema schema datum ^Encoder out]
   (let [fields (into #{} (map field-keyword (.getFields schema)))]
     (when (not-every? fields (avro/field-list datum))
-      (prn "wr-named-checked schema fields " fields)
-      (prn "wr-named-checked datum fields " (avro/field-list datum))
-      (schema-error! schema datum))
+      (let [[_ only-in-datum-keys]
+            (data/diff fields (into #{} (avro/field-list datum)))]
+        (schema-error! schema datum
+                       {:only-in-datum-keys only-in-datum-keys})))
     (doseq [^Schema$Field f (.getFields schema)
             :let [key (field-keyword f), val (avro/field-get datum key)]]
-      (.write writer (.schema f) val out))))
+      (try (.write writer (.schema f) val out)
+           (catch Exception e
+             (if-let [ex-d (ex-data e)]
+               (throw
+                (ex-info (.getMessage e)
+                         (update ex-d :trace conj
+                                 (str "failed writig value:" val
+                                      "for key" key))))
+               (throw
+                (ex-info (.getMessage e)
+                         {:original-exception e
+                          :trace [(str "failed writig value: " val
+                                       " for key: " key)]}))))))))
 
 (defn wr-positional
   [^ClojureDatumWriter writer ^Schema schema datum ^Encoder out]
