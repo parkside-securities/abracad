@@ -1,4 +1,4 @@
-(defproject parkside-securities/abracad "0.4.15-SNAPSHOT"
+(defproject parkside-securities/abracad "0.4.15"
   :description "De/serialize Clojure data structures with Avro."
   :url "http://github.com/parkside-securities/abracad"
   :licenses [{:name "Eclipse Public License"
