@@ -21,8 +21,8 @@
 (defn roundtrips?
   ([schema input] (roundtrips? schema input input))
   ([schema expected input]
-     (and (= expected (apply roundtrip-binary schema input))
-          (= expected (apply roundtrip-json schema input)))))
+   (and (= expected (apply roundtrip-binary schema input))
+        (= expected (apply roundtrip-json schema input)))))
 
 (defrecord Example [foo-foo bar])
 
@@ -38,6 +38,58 @@
 
 (defn ->InetAddress
   [address] (InetAddress/getByAddress address))
+
+(def nested-schema
+  {:type "record",
+   :name "RecordHolderHolder",
+   :namespace "example.avro",
+   :fields
+   [{:name "recordHolderRecord",
+     :type
+     {:type "record",
+      :name "RecordHolder",
+      :fields
+      [{:name "stringHolderRecord",
+        :type
+        {:type "record",
+         :name "StringHolder",
+         :fields
+         [{:name "requiredString", :type "string"}
+          {:name "optionalString",
+           :type ["null" "string"],
+           :default nil}]}}]}}]})
+
+(deftest improved-exception-message
+  (let [{:keys [trace]} (try
+                          (roundtrips? nested-schema
+                                       [{:recordHolderRecord
+                                         {:stringHolderRecord
+                                          {:requiredString 3
+                                           :optionalString "bar"}}}])
+                          (catch ExceptionInfo e (ex-data e)))
+        {:keys [only-in-datum-keys]} (try
+                                       (roundtrips? nested-schema
+                                                    [{:recordHolderRecord
+                                                      {:stringHolderRecord
+                                                       {:requiredString "foo"
+                                                        :foofoo "foo"}}}])
+                                       (catch ExceptionInfo e (ex-data e)))
+        just-checking-that-optional-fields-do-not-have-to-be-there
+        (roundtrips? nested-schema
+                     [{:recordHolderRecord
+                       {:stringHolderRecord
+                        {:requiredString "foo"
+                         :optionalString nil}}}]
+                     [{:recordHolderRecord
+                       {:stringHolderRecord
+                        {:requiredString "foo"}}}])]
+    (is just-checking-that-optional-fields-do-not-have-to-be-there)
+    (testing "error on write includes a trace of key value"
+      (is (= trace ["failed writig value: 3 for key: :requiredString"
+                    "failed writig value:{:requiredString 3, :optionalString \"bar\"}for key:stringHolderRecord"
+                    "failed writig value:{:stringHolderRecord {:requiredString 3, :optionalString \"bar\"}}for key:recordHolderRecord"])))
+    (testing "Keys not defined in the schema are reported(was hard to report missing *required* keys"
+      (is (= only-in-datum-keys #{:foofoo})))))
 
 (deftest test-example
   (let [schema {:type :record,
