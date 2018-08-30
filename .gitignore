@@ -13,3 +13,4 @@ pom.xml.asc
 /doc/
 /tmp/
 .cpcache/
+/.nrepl-port

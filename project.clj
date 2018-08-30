@@ -12,7 +12,7 @@
   :dependencies [[org.clojure/clojure "1.8.0"]
                  [org.apache.avro/avro "1.8.0"]
                  [cheshire/cheshire "5.6.1"]]
-  :plugins [[codox/codox "0.6.4"]]
+  :plugins [[lein-release "1.0.5"]]
   :codox {:include [abracad.avro abracad.avro.edn]}
   :aliases {"test-all" ["with-profile" ~(str "clojure-1-6:"
                                              "clojure-1-7:"
