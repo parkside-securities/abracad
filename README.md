@@ -1,6 +1,7 @@
 # abracad
 
-[![Build Status](https://secure.travis-ci.org/damballa/abracad.png)](http://travis-ci.org/damballa/abracad)
+[![Clojars Project](https://img.shields.io/clojars/v/parkside-securities/abracad.svg)](https://clojars.org/parkside-securities/abracad)
+
 
 Abracad is a Clojure library for de/serializing Clojure data
 structures with Avro, leveraging the Java Avro implementation.
