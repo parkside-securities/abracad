@@ -1,6 +1,7 @@
 # abracad
 
-[![Build Status](https://secure.travis-ci.org/damballa/abracad.png)](http://travis-ci.org/damballa/abracad)
+[![Clojars Project](https://img.shields.io/clojars/v/parkside-securities/abracad.svg)](https://clojars.org/parkside-securities/abracad)
+
 
 Abracad is a Clojure library for de/serializing Clojure data
 structures with Avro, leveraging the Java Avro implementation.
@@ -16,7 +17,7 @@ Abracad is available on Clojars.  Add this `:dependency` to your
 Leiningen `project.clj`:
 
 ```clj
-[com.damballa/abracad "0.4.13"]
+[parkside-securities/abracad "0.4.15"]
 ```
 
 ## Usage
